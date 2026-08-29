@@ -13,17 +13,17 @@ export function CandidateResults({ fonts, previewText }: Props) {
         {fonts.map((font, index) => (
           <li
             key={font.family}
-            className="flex flex-col gap-2 rounded-lg border border-border p-4"
+            className="flex flex-col gap-2 overflow-hidden rounded-lg border border-border p-4"
           >
-            <div className="flex items-baseline justify-between gap-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <span className="text-sm font-medium">
                 {index + 1}. {font.family}
               </span>
               <span className="text-xs text-muted-foreground">{font.category}</span>
             </div>
             <p
-              className={font.className}
-              style={{ fontSize: "2rem", lineHeight: 1.2 }}
+              className={`${font.className} break-words`}
+              style={{ fontSize: "clamp(1.25rem, 5vw, 2rem)", lineHeight: 1.2 }}
             >
               {previewText}
             </p>

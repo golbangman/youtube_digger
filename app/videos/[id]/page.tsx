@@ -47,7 +47,14 @@ export default async function VideoPage(props: PageProps<"/videos/[id]">) {
         </div>
 
         <PlayerProvider>
-          <YouTubePlayer videoId={record.videoId} />
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <div className="lg:w-4/5">
+              <YouTubePlayer videoId={record.videoId} />
+            </div>
+            <div className="min-w-0 lg:w-1/5">
+              <FontMatch videoId={record.videoId} />
+            </div>
+          </div>
 
           {captionReady ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -78,10 +85,6 @@ export default async function VideoPage(props: PageProps<"/videos/[id]">) {
               </p>
             </section>
           )}
-
-          <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
-            <FontMatch videoId={record.videoId} />
-          </section>
         </PlayerProvider>
 
         <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
