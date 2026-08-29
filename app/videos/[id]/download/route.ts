@@ -1,3 +1,4 @@
+import { attachmentDisposition } from "@/lib/content-disposition";
 import { getRecordByVideoId } from "@/lib/store";
 
 function buildFileText(record: {
@@ -19,20 +20,6 @@ function buildFileText(record: {
   ].join("\n");
 }
 
-function toAsciiFallback(title: string): string {
-  const cleaned = title.replace(/[^\x20-\x7E]+/g, "").replace(/["\\]/g, "").trim();
-  return cleaned.length > 0 ? cleaned : "caption";
-}
-
-// RFC 5987 ext-value: encodeURIComponent leaves !*'() unencoded, but those are
-// not attr-chars. Percent-encode the leftovers so the header stays valid.
-function encodeRfc5987(value: string): string {
-  return encodeURIComponent(value).replace(
-    /['()*!]/g,
-    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
-  );
-}
-
 export async function GET(
   _req: Request,
   ctx: RouteContext<"/videos/[id]/download">,
@@ -44,15 +31,11 @@ export async function GET(
     return new Response("자막 레코드를 찾을 수 없습니다.", { status: 404 });
   }
 
-  const body = buildFileText(record);
-  const asciiName = `${toAsciiFallback(record.title)}.txt`;
-  const utf8Name = encodeRfc5987(`${record.title}.txt`);
-
-  return new Response(body, {
+  return new Response(buildFileText(record), {
     status: 200,
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${utf8Name}`,
+      "Content-Disposition": attachmentDisposition(`${record.title}.txt`, "caption.txt"),
     },
   });
 }
