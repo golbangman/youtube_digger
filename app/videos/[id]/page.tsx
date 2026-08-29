@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AudioExtract } from "@/components/audio-extract";
 import { FontMatch } from "@/components/font-match";
-import { audioExists } from "@/lib/audio-store";
+import { MediaDownload } from "@/components/media-download";
+import { mediaExists } from "@/lib/media-store";
 import { getRecordByVideoId } from "@/lib/store";
 
 export default async function VideoPage(props: PageProps<"/videos/[id]">) {
@@ -14,7 +14,10 @@ export default async function VideoPage(props: PageProps<"/videos/[id]">) {
     notFound();
   }
 
-  const audioReady = await audioExists(record.videoId);
+  const [audioReady, videoReady] = await Promise.all([
+    mediaExists("audio", record.videoId),
+    mediaExists("video", record.videoId),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 font-sans dark:bg-black">
@@ -72,7 +75,11 @@ export default async function VideoPage(props: PageProps<"/videos/[id]">) {
         </section>
 
         <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
-          <AudioExtract videoId={record.videoId} initialReady={audioReady} />
+          <MediaDownload kind="audio" videoId={record.videoId} initialReady={audioReady} />
+        </section>
+
+        <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
+          <MediaDownload kind="video" videoId={record.videoId} initialReady={videoReady} />
         </section>
       </main>
     </div>

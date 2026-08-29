@@ -4,7 +4,7 @@ import { attachmentDisposition } from "@/lib/content-disposition";
 import { mediaPath } from "@/lib/media-store";
 import { getRecordByVideoId } from "@/lib/store";
 
-export async function GET(_req: Request, ctx: RouteContext<"/videos/[id]/audio">) {
+export async function GET(_req: Request, ctx: RouteContext<"/videos/[id]/video">) {
   const { id } = await ctx.params;
   const record = await getRecordByVideoId(id);
 
@@ -14,17 +14,17 @@ export async function GET(_req: Request, ctx: RouteContext<"/videos/[id]/audio">
 
   let file: Buffer;
   try {
-    file = await fs.readFile(mediaPath("audio", record.videoId));
+    file = await fs.readFile(mediaPath("video", record.videoId));
   } catch {
-    return new Response("아직 추출된 배경음악이 없습니다.", { status: 404 });
+    return new Response("아직 받은 영상이 없습니다.", { status: 404 });
   }
 
   return new Response(new Uint8Array(file), {
     status: 200,
     headers: {
-      "Content-Type": "audio/mpeg",
+      "Content-Type": "video/mp4",
       "Content-Length": String(file.byteLength),
-      "Content-Disposition": attachmentDisposition(`${record.title}.mp3`, "audio.mp3"),
+      "Content-Disposition": attachmentDisposition(`${record.title}.mp4`, "video.mp4"),
     },
   });
 }
