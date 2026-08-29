@@ -12,12 +12,39 @@ Next.js 16 (App Router) · React 19 · Tailwind CSS 4 · shadcn/ui · Bun · Vit
 
 ## 시작하기
 
+### 사전 준비
+
+이 앱은 외부 CLI 도구 세 개에 의존한다. 새 PC에서는 먼저 이것부터 깐다.
+
+| 도구 | 용도 | 없으면 |
+|---|---|---|
+| **Bun** 1.3.x | 패키지 매니저 겸 런타임 | 아무것도 안 됨 |
+| **yt-dlp** | 영상 메타데이터·자막 URL·미디어 다운로드·프레임 추출 | 자막/번역, MP3·영상, 화면 캡쳐 전부 실패 |
+| **ffmpeg** | 프레임 추출·미디어 변환 (yt-dlp도 내부적으로 호출) | 위와 동일 |
+
+OS별 yt-dlp / ffmpeg 설치:
+
+- **macOS**: `brew install yt-dlp ffmpeg`
+- **Ubuntu/Debian**: `sudo apt install -y ffmpeg` + yt-dlp는 `pipx install yt-dlp` 또는 [공식 단일 바이너리](https://github.com/yt-dlp/yt-dlp#installation)를 PATH에 둔다
+- **Windows**: `winget install yt-dlp.yt-dlp Gyan.FFmpeg` 또는 `scoop install yt-dlp ffmpeg`
+
+`yt-dlp --version`, `ffmpeg -version`이 되면 준비 완료다.
+
+### 설치와 실행
+
 ```bash
+git clone https://github.com/golbangman/youtube_digger.git
+cd youtube_digger
 bun install
+bunx playwright install chromium   # 자막 한글 번역용 (headless 크롬으로 translate.google.com 조작)
 bun dev
 ```
 
 [http://localhost:3000](http://localhost:3000)에서 결과를 확인할 수 있습니다.
+
+- `.env` 파일은 필요 없다.
+- `data/`는 gitignore 대상이라 클론하면 비어 있다. 등록한 레퍼런스 영상 목록과 받아둔 MP3·영상 파일(`data/records.json`, `data/audio`, `data/video`)은 PC 간에 넘어가지 않고, 처음 등록할 때 앱이 자동 생성한다.
+- README 아래쪽의 `PLAYWRIGHT_CHROMIUM_PATH`는 E2E 테스트 전용이다. 앱의 번역 기능은 그 값을 보지 않으므로, 크롬이 이미 있어도 `bunx playwright install chromium`으로 Playwright가 인식하는 위치에 설치해야 한다.
 
 ## 스크립트
 
