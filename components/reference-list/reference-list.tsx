@@ -11,6 +11,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 export type ReferenceItem = {
   videoId: string;
   title: string;
+  youtubeUrl: string;
   hasCaption: boolean;
   hasAudio: boolean;
   hasVideo: boolean;
@@ -73,6 +74,15 @@ function ReferenceRow({ item }: { item: ReferenceItem }) {
           </Link>
           <AssetIcons item={item} />
         </div>
+
+        <a
+          href={item.youtubeUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="truncate text-xs text-zinc-500 hover:underline dark:text-zinc-400"
+        >
+          {item.youtubeUrl}
+        </a>
 
         <textarea
           defaultValue={item.memo}

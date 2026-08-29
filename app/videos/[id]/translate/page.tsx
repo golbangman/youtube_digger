@@ -16,12 +16,22 @@ export default async function TranslatePage(props: PageProps<"/videos/[id]/trans
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
-        <Link
-          href="/"
-          className="text-sm text-zinc-500 hover:underline dark:text-zinc-400"
-        >
-          ← 새 영상 입력
-        </Link>
+        <div className="flex flex-col gap-1">
+          <Link
+            href="/"
+            className="text-sm text-zinc-500 hover:underline dark:text-zinc-400"
+          >
+            ← 새 영상 입력
+          </Link>
+          <a
+            href={record.youtubeUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm break-all text-zinc-500 hover:underline dark:text-zinc-400"
+          >
+            {record.youtubeUrl}
+          </a>
+        </div>
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">

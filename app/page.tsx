@@ -9,6 +9,7 @@ export default async function Home() {
     records.map(async (record) => ({
       videoId: record.videoId,
       title: record.title,
+      youtubeUrl: record.youtubeUrl,
       hasCaption: hasCaption(record),
       hasAudio: await mediaExists("audio", record.videoId),
       hasVideo: await mediaExists("video", record.videoId),
