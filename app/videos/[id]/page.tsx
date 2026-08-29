@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AudioExtract } from "@/components/audio-extract";
 import { FontMatch } from "@/components/font-match";
+import { audioExists } from "@/lib/audio-store";
 import { getRecordByVideoId } from "@/lib/store";
 
 export default async function VideoPage(props: PageProps<"/videos/[id]">) {
@@ -11,6 +13,8 @@ export default async function VideoPage(props: PageProps<"/videos/[id]">) {
   if (!record) {
     notFound();
   }
+
+  const audioReady = await audioExists(record.videoId);
 
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 font-sans dark:bg-black">
@@ -65,6 +69,10 @@ export default async function VideoPage(props: PageProps<"/videos/[id]">) {
 
         <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
           <FontMatch />
+        </section>
+
+        <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
+          <AudioExtract videoId={record.videoId} initialReady={audioReady} />
         </section>
       </main>
     </div>
