@@ -1,11 +1,10 @@
-const MAX_CHUNK_LENGTH = 450;
+import { chromium } from "playwright";
 
-interface MyMemoryResponse {
-  responseData?: { translatedText?: string };
-  responseStatus?: number | string;
-}
-
-type GoogleTranslateResponse = [Array<[string, string, ...unknown[]]>, ...unknown[]];
+// 무료 번역 HTTP API(googleapis, MyMemory)는 조금만 몰아 써도 429로 막힌다.
+// 그래서 youtube_caption 과 같은 방식으로, 실제 브라우저에서 translate.google.com 을
+// 조작해 번역 결과를 읽어 온다.
+const MAX_CHUNK_LENGTH = 4500;
+const TRANSLATE_TIMEOUT_MS = 20_000;
 
 function splitLongSentence(sentence: string, maxLength: number): string[] {
   const words = sentence.split(" ");
@@ -52,68 +51,30 @@ function splitIntoChunks(text: string, maxLength: number): string[] {
   return chunks;
 }
 
-async function translateWithGoogle(chunk: string): Promise<string> {
-  const params = new URLSearchParams({
-    client: "gtx",
-    sl: "en",
-    tl: "ko",
-    dt: "t",
-    q: chunk,
-  });
-  const res = await fetch(
-    `https://translate.googleapis.com/translate_a/single?${params.toString()}`,
-  );
-  if (!res.ok) {
-    throw new Error(`Google 번역 요청 실패 (${res.status})`);
-  }
-  const data = (await res.json()) as GoogleTranslateResponse;
-  if (!Array.isArray(data) || !Array.isArray(data[0])) {
-    throw new Error("Google 번역 응답 형식이 올바르지 않습니다.");
-  }
-  return data[0].map((segment) => segment[0]).join("");
-}
-
-async function translateWithMyMemory(chunk: string): Promise<string> {
-  const params = new URLSearchParams({
-    q: chunk,
-    langpair: "en|ko",
-  });
-  const res = await fetch(
-    `https://api.mymemory.translated.net/get?${params.toString()}`,
-  );
-  if (!res.ok) {
-    throw new Error(`MyMemory 번역 요청 실패 (${res.status})`);
-  }
-  const data = (await res.json()) as MyMemoryResponse;
-  if (Number(data.responseStatus) !== 200 || !data.responseData?.translatedText) {
-    throw new Error("MyMemory 번역 응답 형식이 올바르지 않습니다.");
-  }
-  return data.responseData.translatedText;
-}
-
-const TRANSLATION_PROVIDERS = [translateWithGoogle, translateWithMyMemory];
-
-async function translateChunk(chunk: string): Promise<string> {
-  let lastError: unknown;
-
-  for (const provider of TRANSLATION_PROVIDERS) {
-    try {
-      return await provider(chunk);
-    } catch (err) {
-      lastError = err;
-    }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("모든 무료 번역 제공자 요청이 실패했습니다.");
-}
-
 export async function translateToKorean(text: string): Promise<string> {
   const chunks = splitIntoChunks(text, MAX_CHUNK_LENGTH);
-  const translated: string[] = [];
-  for (const chunk of chunks) {
-    translated.push(await translateChunk(chunk));
+  const browser = await chromium.launch({ headless: true });
+
+  try {
+    const page = await browser.newPage();
+    const translated: string[] = [];
+
+    for (const chunk of chunks) {
+      const url = `https://translate.google.com/?sl=en&tl=ko&text=${encodeURIComponent(chunk)}&op=translate`;
+      await page.goto(url, { waitUntil: "networkidle", timeout: TRANSLATE_TIMEOUT_MS });
+      await page.waitForFunction(
+        () => {
+          const el = document.querySelector<HTMLTextAreaElement>('textarea[lang="ko"]');
+          return !!el && el.value.trim().length > 0;
+        },
+        { timeout: TRANSLATE_TIMEOUT_MS },
+      );
+      const value = await page.locator('textarea[lang="ko"]').inputValue();
+      translated.push(value.trim());
+    }
+
+    return translated.join(" ");
+  } finally {
+    await browser.close();
   }
-  return translated.join(" ");
 }
