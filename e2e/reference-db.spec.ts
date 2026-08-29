@@ -112,3 +112,15 @@ test("URL을 제출하면 참고 목록에 등록된다", async ({ page }) => {
       .filter({ has: page.locator(`img[src*="${REAL_ID}"]`) }),
   ).toBeVisible();
 });
+
+test("영상 프레임 추출 요청은 지정한 영역의 JPEG를 돌려준다", async ({ page }) => {
+  test.setTimeout(120_000);
+  // 앞 테스트에서 REAL_ID 레코드가 등록됐다. 그 영상의 프레임을 자른다.
+  const res = await page.request.post(`/videos/${REAL_ID}/frame`, {
+    data: { time: 8, x: 0.1, y: 0.4, w: 0.5, h: 0.25 },
+  });
+
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toBe("image/jpeg");
+  expect((await res.body()).byteLength).toBeGreaterThan(2000);
+});

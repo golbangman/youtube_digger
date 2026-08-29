@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { FontMatch } from "@/components/font-match";
 import { MediaDownload } from "@/components/media-download";
+import { PlayerProvider, YouTubePlayer } from "@/components/player";
 import { mediaExists } from "@/lib/media-store";
 import { getRecordByVideoId, hasCaption } from "@/lib/store";
 
@@ -45,49 +46,43 @@ export default async function VideoPage(props: PageProps<"/videos/[id]">) {
           ) : null}
         </div>
 
-        <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
-          <iframe
-            src={`https://www.youtube.com/embed/${record.videoId}`}
-            title={record.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="h-full w-full"
-          />
-        </div>
+        <PlayerProvider>
+          <YouTubePlayer videoId={record.videoId} />
 
-        {captionReady ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {captionReady ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <section className="flex flex-col gap-2">
+                <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                  영어 자막
+                </h2>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-900 dark:text-zinc-100">
+                  {record.englishText}
+                </p>
+              </section>
+              <section className="flex flex-col gap-2">
+                <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                  한국어 번역
+                </h2>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-900 dark:text-zinc-100">
+                  {record.koreanText}
+                </p>
+              </section>
+            </div>
+          ) : (
             <section className="flex flex-col gap-2">
               <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                영어 자막
+                자막
               </h2>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-900 dark:text-zinc-100">
-                {record.englishText}
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                이 영상에는 영어 자막이 없어 번역을 만들지 않았습니다.
               </p>
             </section>
-            <section className="flex flex-col gap-2">
-              <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                한국어 번역
-              </h2>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-900 dark:text-zinc-100">
-                {record.koreanText}
-              </p>
-            </section>
-          </div>
-        ) : (
-          <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              자막
-            </h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              이 영상에는 영어 자막이 없어 번역을 만들지 않았습니다.
-            </p>
+          )}
+
+          <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
+            <FontMatch videoId={record.videoId} />
           </section>
-        )}
-
-        <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
-          <FontMatch />
-        </section>
+        </PlayerProvider>
 
         <section className="border-t border-zinc-200 pt-8 dark:border-zinc-800">
           <MediaDownload kind="audio" videoId={record.videoId} initialReady={audioReady} />

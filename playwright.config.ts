@@ -12,7 +12,10 @@ export default defineConfig({
   testMatch: /.*\.spec\.ts$/,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // 여러 스펙이 실제 yt-dlp·유튜브·번역 API를 쓴다. 동시 부하와 일시적 rate limit을
+  // 줄이려고 워커를 제한하고 재시도를 한 번 둔다.
+  workers: 2,
+  retries: process.env.CI ? 2 : 1,
   reporter: [["html", { open: "never" }]],
   use: {
     baseURL,

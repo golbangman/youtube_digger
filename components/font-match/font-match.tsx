@@ -1,26 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { usePlayer } from "@/components/player";
 
 import { CandidateResults } from "./candidate-results";
 import { CANDIDATE_FONTS, RESULT_LIMIT, SAMPLE_TEXT, type CandidateFont } from "./catalog";
 import { measureCrop, rankFonts, type PixelRegion } from "./ranking";
 import { ScreenshotCropper } from "./screenshot-cropper";
 
-export function FontMatch() {
+type FrameStatus = "idle" | "loading" | "error";
+
+export function FontMatch({ videoId }: { videoId: string }) {
+  const player = usePlayer();
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [region, setRegion] = useState<PixelRegion | null>(null);
   const [text, setText] = useState("");
   const [results, setResults] = useState<CandidateFont[] | null>(null);
+  const [frameStatus, setFrameStatus] = useState<FrameStatus>("idle");
+  const objectUrlRef = useRef<string | null>(null);
 
   const previewText = text.trim() || SAMPLE_TEXT;
 
-  // 새 스크린샷을 올리거나 선택이 사라지면 이전 추천 결과도 같이 지운다.
-  // 안 그러면 지운 영역 기준의 목록이 화면에 그대로 남는다.
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
+
+  const putImage = (src: string | null) => {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    objectUrlRef.current = src;
+    setImageSrc(src);
+    setRegion(null);
+    setResults(null);
+  };
+
+  const handleFileSelected = (file: File | null) => {
+    putImage(file ? URL.createObjectURL(file) : null);
+  };
+
   const handleRegionChange = (next: PixelRegion | null) => {
     setRegion(next);
     if (!next) setResults(null);
+  };
+
+  const grabFrameFromPlayer = () => {
+    setFrameStatus("idle");
+    player.arm(async (selection) => {
+      setFrameStatus("loading");
+      try {
+        const res = await fetch(`/videos/${videoId}/frame`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(selection),
+        });
+        if (!res.ok) throw new Error();
+        const blob = await res.blob();
+        putImage(URL.createObjectURL(blob));
+        setFrameStatus("idle");
+      } catch {
+        setFrameStatus("error");
+      }
+    });
   };
 
   const handleRecommend = () => {
@@ -34,12 +77,38 @@ export function FontMatch() {
       <header className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold tracking-tight">폰트 추천</h2>
         <p className="text-sm text-muted-foreground">
-          레퍼런스 영상에서 원하는 프레임을 캡처해 올리고 텍스트 영역을 지정하면,
-          비슷해 보이는 무료 폰트를 추천하고 다운로드 링크를 드립니다.
+          재생 중인 영상에서 원하는 장면의 텍스트 영역을 골라 그 프레임을 가져오거나,
+          스크린샷 파일을 올려 비슷한 무료 폰트를 찾습니다.
         </p>
       </header>
 
-      <ScreenshotCropper onRegionChange={handleRegionChange} />
+      <div className="flex flex-col gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="self-start"
+          disabled={player.armed || frameStatus === "loading"}
+          onClick={grabFrameFromPlayer}
+        >
+          {player.armed
+            ? "위 영상에서 영역을 드래그하세요"
+            : frameStatus === "loading"
+              ? "프레임 가져오는 중..."
+              : "이 장면에서 폰트 찾기"}
+        </Button>
+        {frameStatus === "error" ? (
+          <p className="text-sm text-destructive">
+            프레임을 가져오지 못했습니다. 스크린샷 파일을 올려 진행해주세요.
+          </p>
+        ) : null}
+      </div>
+
+      <ScreenshotCropper
+        imageSrc={imageSrc}
+        onFileSelected={handleFileSelected}
+        onRegionChange={handleRegionChange}
+        disabled={frameStatus === "loading"}
+      />
 
       <div className="flex flex-col gap-2">
         <label htmlFor="crop-text" className="text-sm font-medium">
