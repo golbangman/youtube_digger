@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { deleteMedia } from "@/lib/media-store";
-import { deleteRecord, getRecordByVideoId, saveRecord, updateMemo } from "@/lib/store";
+import {
+  deleteRecord,
+  getRecordByVideoId,
+  hasCaption,
+  saveRecord,
+  updateMemo,
+} from "@/lib/store";
 import { translateToKorean } from "@/lib/translate";
 import { fetchReferenceVideo, isYoutubeUrl, YtDlpNotInstalledError } from "@/lib/youtube";
 
@@ -17,6 +23,8 @@ export async function processVideoUrl(
   formData: FormData,
 ): Promise<ProcessState> {
   const url = formData.get("url")?.toString().trim();
+  // 홈 폼의 "번역 페이지" / "미디어 추출" 버튼이 어느 하위 페이지로 보낼지 정한다.
+  const target = formData.get("intent")?.toString() === "media" ? "media" : "translate";
   if (!url) {
     return { error: "유튜브 링크를 입력해주세요." };
   }
@@ -35,14 +43,16 @@ export async function processVideoUrl(
   }
 
   const existing = await getRecordByVideoId(video.videoId);
-  if (existing) {
-    redirect(`/videos/${video.videoId}/translate`);
+  // 자막 번역까지 끝난 레코드면 그대로 이동한다.
+  if (existing && hasCaption(existing)) {
+    redirect(`/videos/${video.videoId}/${target}`);
   }
 
-  // 영어 자막이 있으면 번역까지 시도한다. 번역이 실패해도 등록은 한다(자막 없음 상태).
-  let englishText: string | undefined;
-  let koreanText: string | undefined;
-  if (video.text) {
+  // 새 레코드거나, 예전에 자막 없이 저장된 레코드를 다시 채우는 경우다.
+  // 영어 자막이 있으면 번역까지 시도한다. 실패해도 등록/이동은 한다(자막 없음 상태).
+  let englishText = existing?.englishText;
+  let koreanText = existing?.koreanText;
+  if (video.text && !(englishText && koreanText)) {
     try {
       koreanText = await translateToKorean(video.text);
       englishText = video.text;
@@ -58,11 +68,11 @@ export async function processVideoUrl(
     title: video.title,
     englishText,
     koreanText,
-    memo: "",
-    createdAt: new Date().toISOString(),
+    memo: existing?.memo ?? "",
+    createdAt: existing?.createdAt ?? new Date().toISOString(),
   });
 
-  redirect(`/videos/${video.videoId}/translate`);
+  redirect(`/videos/${video.videoId}/${target}`);
 }
 
 export async function updateReferenceMemo(videoId: string, memo: string): Promise<void> {
