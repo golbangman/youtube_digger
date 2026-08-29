@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "레퍼런스 영상",
+  title: "YouTube Digger",
   description: "참고할 유튜브 영상을 등록하고 자막 번역·폰트 추천·배경음악·영상 파일을 확보합니다.",
 };
 
