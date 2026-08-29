@@ -8,13 +8,11 @@ type Point = { x: number; y: number };
 type Rect = { left: number; top: number; width: number; height: number };
 
 type Props = {
-  /** 표시할 이미지. 없으면 크로퍼가 안 보인다. */
+  /** 캡쳐한 화면 이미지. 없으면 안내 문구만 보인다. */
   imageSrc: string | null;
-  /** 파일을 고르면 그 File을 넘긴다(비우면 null). 부모가 objectURL을 관리한다. */
-  onFileSelected: (file: File | null) => void;
   /** 선택 영역이 확정되면 그 픽셀을, 취소되면 null을 넘긴다. */
   onRegionChange: (region: PixelRegion | null) => void;
-  /** 프레임을 가져오는 중이면 파일 선택을 막는다. */
+  /** 캡쳐 중이면 드래그를 막는다. */
   disabled?: boolean;
 };
 
@@ -29,7 +27,7 @@ function rectFromPoints(a: Point, b: Point): Rect {
   };
 }
 
-export function ScreenshotCropper({ imageSrc, onFileSelected, onRegionChange, disabled }: Props) {
+export function ScreenshotCropper({ imageSrc, onRegionChange, disabled }: Props) {
   const [dragStart, setDragStart] = useState<Point | null>(null);
   const [rect, setRect] = useState<Rect | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -42,11 +40,11 @@ export function ScreenshotCropper({ imageSrc, onFileSelected, onRegionChange, di
 
   const handleMouseDown = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      if (!imageSrc) return;
+      if (!imageSrc || disabled) return;
       movedRef.current = false;
       setDragStart(pointFromEvent(event));
     },
-    [imageSrc, pointFromEvent],
+    [imageSrc, disabled, pointFromEvent],
   );
 
   const handleMouseMove = useCallback(
@@ -102,58 +100,46 @@ export function ScreenshotCropper({ imageSrc, onFileSelected, onRegionChange, di
     [dragStart, onRegionChange, pointFromEvent],
   );
 
-  return (
-    <div className="flex flex-col gap-3">
-      <label htmlFor="screenshot-file" className="text-sm font-medium">
-        스크린샷 파일로 찾기
-      </label>
-      <input
-        id="screenshot-file"
-        type="file"
-        accept="image/png,image/jpeg"
-        disabled={disabled}
-        onChange={(event) => {
-          setRect(null);
-          setDragStart(null);
-          onRegionChange(null);
-          onFileSelected(event.target.files?.[0] ?? null);
-        }}
-        className="text-sm file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-1.5 file:text-sm"
-      />
+  if (!imageSrc) {
+    return (
+      <p className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
+        위 영상에서 <span className="font-medium">화면 캡쳐</span>를 누르면 그 장면이
+        여기 표시됩니다. 이미지 위에서 글자 영역을 드래그해 폰트를 찾으세요.
+      </p>
+    );
+  }
 
-      {imageSrc ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-muted-foreground">
-            이미지 위에서 드래그해 폰트를 찾을 텍스트 한 덩어리를 감싸세요. 다시
-            드래그하면 새 영역으로 바뀝니다.
-          </p>
-          <div className="relative inline-block max-w-full select-none border border-border">
-            {/* 프레임/업로드 blob 이미지라 next/image 대신 일반 img를 쓴다. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              ref={imgRef}
-              src={imageSrc}
-              alt="폰트를 찾을 이미지"
-              draggable={false}
-              className="block h-auto max-w-full"
-            />
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-muted-foreground">
+        이미지 위에서 드래그해 폰트를 찾을 텍스트 한 덩어리를 감싸세요. 다시
+        드래그하면 새 영역으로 바뀝니다.
+      </p>
+      <div className="relative inline-block max-w-full select-none border border-border">
+        {/* 서버가 뽑은 프레임 blob이라 next/image 대신 일반 img를 쓴다. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={imgRef}
+          src={imageSrc}
+          alt="폰트를 찾을 캡쳐 화면"
+          draggable={false}
+          className="block h-auto max-w-full"
+        />
+        <div
+          className="absolute inset-0 cursor-crosshair"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={finishSelection}
+          onMouseLeave={finishSelection}
+        >
+          {rect && rect.width > 0 && rect.height > 0 ? (
             <div
-              className="absolute inset-0 cursor-crosshair"
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={finishSelection}
-              onMouseLeave={finishSelection}
-            >
-              {rect && rect.width > 0 && rect.height > 0 ? (
-                <div
-                  className="absolute border-2 border-primary bg-primary/10"
-                  style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
-                />
-              ) : null}
-            </div>
-          </div>
+              className="absolute border-2 border-primary bg-primary/10"
+              style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+            />
+          ) : null}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

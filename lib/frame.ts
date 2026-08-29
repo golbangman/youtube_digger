@@ -29,17 +29,17 @@ function collect(stream: NodeJS.ReadableStream): Promise<Buffer> {
 }
 
 /**
- * 유튜브 영상의 `time`초 지점 프레임을 뽑아 `rect`(0~1 비율)만큼 잘라 JPEG로
- * 돌려준다. yt-dlp가 받은 짧은 구간을 ffmpeg에 파이프해 한 장만 뽑는다.
+ * 유튜브 영상의 `time`초 지점 프레임을 한 장 뽑아 JPEG로 돌려준다.
+ * `rect`(0~1 비율)를 주면 그만큼 잘라서, 없으면 프레임 전체를 돌려준다.
+ * yt-dlp가 받은 짧은 구간을 ffmpeg에 파이프해 한 장만 뽑는다.
  */
-export async function extractFrameCrop(opts: {
+export async function extractFrame(opts: {
   youtubeUrl: string;
   time: number;
-  rect: FrameRect;
+  rect?: FrameRect;
   signal?: AbortSignal;
 }): Promise<Buffer> {
-  const rect = normalizeRect(opts.rect);
-  if (!rect) throw new Error("선택 영역이 너무 작습니다.");
+  const rect = opts.rect ? normalizeRect(opts.rect) : null;
 
   const start = Math.max(0, Math.floor(opts.time));
   const section = `*${start}-${start + 2}`;
@@ -61,10 +61,15 @@ export async function extractFrameCrop(opts: {
     { stdio: ["ignore", "pipe", "pipe"] },
   );
 
-  const crop = `crop=iw*${rect.w.toFixed(5)}:ih*${rect.h.toFixed(5)}:iw*${rect.x.toFixed(5)}:ih*${rect.y.toFixed(5)}`;
+  const cropArgs = rect
+    ? [
+        "-vf",
+        `crop=iw*${rect.w.toFixed(5)}:ih*${rect.h.toFixed(5)}:iw*${rect.x.toFixed(5)}:ih*${rect.y.toFixed(5)}`,
+      ]
+    : [];
   const ffmpeg = spawn(
     "ffmpeg",
-    ["-nostdin", "-i", "pipe:0", "-frames:v", "1", "-vf", crop, "-f", "mjpeg", "-q:v", "3", "pipe:1"],
+    ["-nostdin", "-i", "pipe:0", "-frames:v", "1", ...cropArgs, "-f", "mjpeg", "-q:v", "3", "pipe:1"],
     { stdio: ["pipe", "pipe", "pipe"] },
   );
 

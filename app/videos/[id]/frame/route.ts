@@ -1,4 +1,4 @@
-import { extractFrameCrop } from "@/lib/frame";
+import { extractFrame } from "@/lib/frame";
 import { ToolNotInstalledError } from "@/lib/media-extract";
 import { getRecordByVideoId } from "@/lib/store";
 
@@ -15,7 +15,7 @@ export async function POST(
     return new Response("자막 레코드를 찾을 수 없습니다.", { status: 404 });
   }
 
-  let body: { time?: number; x?: number; y?: number; w?: number; h?: number };
+  let body: { time?: number };
   try {
     body = await request.json();
   } catch {
@@ -28,10 +28,9 @@ export async function POST(
   }
 
   try {
-    const image = await extractFrameCrop({
+    const image = await extractFrame({
       youtubeUrl: record.youtubeUrl,
       time,
-      rect: { x: Number(body.x), y: Number(body.y), w: Number(body.w), h: Number(body.h) },
       signal: request.signal,
     });
     return new Response(new Uint8Array(image), {

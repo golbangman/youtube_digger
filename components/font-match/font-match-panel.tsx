@@ -16,7 +16,6 @@ export function FontMatchPanel() {
     results,
     frameStatus,
     previewText,
-    handleFileSelected,
     handleRegionChange,
     handleRecommend,
   } = useFontMatch();
@@ -27,13 +26,12 @@ export function FontMatchPanel() {
 
       {frameStatus === "error" ? (
         <p className="text-sm text-destructive">
-          프레임을 가져오지 못했습니다. 스크린샷 파일을 올려 진행해주세요.
+          화면을 캡쳐하지 못했습니다. 영상을 재생한 뒤 다시 시도해주세요.
         </p>
       ) : null}
 
       <ScreenshotCropper
         imageSrc={imageSrc}
-        onFileSelected={handleFileSelected}
         onRegionChange={handleRegionChange}
         disabled={frameStatus === "loading"}
       />

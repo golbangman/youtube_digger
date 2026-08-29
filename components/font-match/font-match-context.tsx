@@ -25,9 +25,7 @@ type FontMatchContextValue = {
   results: CandidateFont[] | null;
   frameStatus: FrameStatus;
   previewText: string;
-  armed: boolean;
-  grabFrameFromPlayer: () => void;
-  handleFileSelected: (file: File | null) => void;
+  captureFrame: () => void;
   handleRegionChange: (next: PixelRegion | null) => void;
   handleRecommend: () => void;
 };
@@ -65,36 +63,33 @@ export function FontMatchProvider({
     setResults(null);
   }, []);
 
-  const handleFileSelected = useCallback(
-    (file: File | null) => {
-      putImage(file ? URL.createObjectURL(file) : null);
-    },
-    [putImage],
-  );
-
   const handleRegionChange = useCallback((next: PixelRegion | null) => {
     setRegion(next);
     if (!next) setResults(null);
   }, []);
 
-  const grabFrameFromPlayer = useCallback(() => {
-    setFrameStatus("idle");
-    player.arm(async (selection) => {
-      setFrameStatus("loading");
-      try {
-        const res = await fetch(`/videos/${videoId}/frame`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(selection),
-        });
-        if (!res.ok) throw new Error();
-        const blob = await res.blob();
-        putImage(URL.createObjectURL(blob));
-        setFrameStatus("idle");
-      } catch {
-        setFrameStatus("error");
-      }
-    });
+  // 재생 중인 영상의 현재 시각 프레임을 서버에서 통째로 받아 아래에 띄운다.
+  // 유튜브 iframe은 교차 출처라 브라우저에서 직접 캡쳐할 수 없어 서버가 뽑는다.
+  const captureFrame = useCallback(async () => {
+    const time = player.getCurrentTime();
+    if (time == null) {
+      setFrameStatus("error");
+      return;
+    }
+    setFrameStatus("loading");
+    try {
+      const res = await fetch(`/videos/${videoId}/frame`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ time }),
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      putImage(URL.createObjectURL(blob));
+      setFrameStatus("idle");
+    } catch {
+      setFrameStatus("error");
+    }
   }, [player, putImage, videoId]);
 
   const handleRecommend = useCallback(() => {
@@ -112,9 +107,7 @@ export function FontMatchProvider({
       results,
       frameStatus,
       previewText,
-      armed: player.armed,
-      grabFrameFromPlayer,
-      handleFileSelected,
+      captureFrame,
       handleRegionChange,
       handleRecommend,
     }),
@@ -125,9 +118,7 @@ export function FontMatchProvider({
       results,
       frameStatus,
       previewText,
-      player.armed,
-      grabFrameFromPlayer,
-      handleFileSelected,
+      captureFrame,
       handleRegionChange,
       handleRecommend,
     ],

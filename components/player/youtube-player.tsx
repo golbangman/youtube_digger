@@ -147,7 +147,7 @@ export function YouTubePlayer({ videoId }: { videoId: string }) {
       <div ref={hostRef} className="h-full w-full" />
       {apiError ? (
         <p className="absolute inset-x-0 bottom-0 bg-black/70 p-2 text-center text-xs text-white">
-          플레이어를 불러오지 못했습니다. 아래에서 스크린샷 파일을 올려 폰트를 찾을 수 있습니다.
+          플레이어를 불러오지 못했습니다.
         </p>
       ) : null}
       {armed ? (
