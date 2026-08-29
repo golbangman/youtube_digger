@@ -1,5 +1,5 @@
 import { attachmentDisposition } from "@/lib/content-disposition";
-import { getRecordByVideoId } from "@/lib/store";
+import { getRecordByVideoId, hasCaption } from "@/lib/store";
 
 function buildFileText(record: {
   title: string;
@@ -31,11 +31,23 @@ export async function GET(
     return new Response("자막 레코드를 찾을 수 없습니다.", { status: 404 });
   }
 
-  return new Response(buildFileText(record), {
-    status: 200,
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Content-Disposition": attachmentDisposition(`${record.title}.txt`, "caption.txt"),
+  if (!hasCaption(record)) {
+    return new Response("이 영상에는 자막이 없습니다.", { status: 404 });
+  }
+
+  return new Response(
+    buildFileText({
+      title: record.title,
+      youtubeUrl: record.youtubeUrl,
+      englishText: record.englishText ?? "",
+      koreanText: record.koreanText ?? "",
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Disposition": attachmentDisposition(`${record.title}.txt`, "caption.txt"),
+      },
     },
-  });
+  );
 }

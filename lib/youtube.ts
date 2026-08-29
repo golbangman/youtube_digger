@@ -74,36 +74,34 @@ function findEnglishFormats(
   return variantKey ? captions[variantKey] : undefined;
 }
 
-export async function fetchEnglishTranscript(
+/**
+ * 영상의 id·제목을 얻고, 영어 자막이 있으면 원문 텍스트까지 가져온다.
+ * 영상 정보를 못 가져오면 throw. 영어 자막이 없거나 비어 있으면 text는 null.
+ */
+export async function fetchReferenceVideo(
   youtubeUrl: string,
-): Promise<{ videoId: string; title: string; text: string } | null> {
+): Promise<{ videoId: string; title: string; text: string | null }> {
   const info = await fetchVideoInfo(youtubeUrl);
+  const meta = {
+    videoId: info.id,
+    title: info.title?.trim() || info.id,
+  };
 
   const captionUrl =
     pickJson3Url(findEnglishFormats(info.subtitles)) ??
     pickJson3Url(findEnglishFormats(info.automatic_captions));
-  if (!captionUrl) return null;
+  if (!captionUrl) return { ...meta, text: null };
 
   const captionRes = await fetch(captionUrl);
-  if (!captionRes.ok) {
-    throw new Error("자막을 불러오지 못했습니다.");
-  }
+  if (!captionRes.ok) return { ...meta, text: null };
   const captionData = (await captionRes.json()) as { events?: CaptionEvent[] };
 
   const text = (captionData.events ?? [])
-    .map((event) =>
-      (event.segs ?? []).map((seg) => seg.utf8 ?? "").join(""),
-    )
+    .map((event) => (event.segs ?? []).map((seg) => seg.utf8 ?? "").join(""))
     .join(" ")
     .replace(/\n/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!text) return null;
-
-  return {
-    videoId: info.id,
-    title: info.title?.trim() || info.id,
-    text: decodeEntities(text),
-  };
+  return { ...meta, text: text ? decodeEntities(text) : null };
 }

@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "레퍼런스 영상 자막",
-  description: "레퍼런스 유튜브 영상의 영어 자막을 받아 한국어로 번역합니다.",
+  title: "레퍼런스 영상",
+  description: "참고할 유튜브 영상을 등록하고 자막 번역·폰트 추천·배경음악·영상 파일을 확보합니다.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

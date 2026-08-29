@@ -21,7 +21,7 @@ export function VideoUrlForm() {
           className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <Button type="submit" disabled={pending}>
-          {pending ? "처리 중..." : "자막 보기"}
+          {pending ? "등록 중..." : "레퍼런스 추가"}
         </Button>
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}

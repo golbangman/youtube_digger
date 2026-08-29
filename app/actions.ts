@@ -1,10 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { fetchEnglishTranscript, isYoutubeUrl, YtDlpNotInstalledError } from "@/lib/youtube";
+import { deleteMedia } from "@/lib/media-store";
+import { deleteRecord, getRecordByVideoId, saveRecord, updateMemo } from "@/lib/store";
 import { translateToKorean } from "@/lib/translate";
-import { getRecordByVideoId, saveRecord } from "@/lib/store";
+import { fetchReferenceVideo, isYoutubeUrl, YtDlpNotInstalledError } from "@/lib/youtube";
 
 export interface ProcessState {
   error: string | null;
@@ -22,9 +24,9 @@ export async function processVideoUrl(
     return { error: "올바른 유튜브 링크가 아닙니다." };
   }
 
-  let transcript: Awaited<ReturnType<typeof fetchEnglishTranscript>>;
+  let video: Awaited<ReturnType<typeof fetchReferenceVideo>>;
   try {
-    transcript = await fetchEnglishTranscript(url);
+    video = await fetchReferenceVideo(url);
   } catch (err) {
     if (err instanceof YtDlpNotInstalledError) {
       return { error: err.message };
@@ -32,32 +34,45 @@ export async function processVideoUrl(
     return { error: "영상 정보를 가져오지 못했습니다. 링크를 확인하고 다시 시도해주세요." };
   }
 
-  if (!transcript) {
-    return { error: "이 영상에는 영어 자막이 없어 처리할 수 없습니다." };
-  }
-
-  const existing = await getRecordByVideoId(transcript.videoId);
+  const existing = await getRecordByVideoId(video.videoId);
   if (existing) {
-    redirect(`/videos/${transcript.videoId}`);
+    redirect(`/videos/${video.videoId}`);
   }
 
-  let koreanText: string;
-  try {
-    koreanText = await translateToKorean(transcript.text);
-  } catch (err) {
-    console.error("translateToKorean failed:", err);
-    return { error: "번역에 실패했습니다. 잠시 후 다시 시도해주세요." };
+  // 영어 자막이 있으면 번역까지 시도한다. 번역이 실패해도 등록은 한다(자막 없음 상태).
+  let englishText: string | undefined;
+  let koreanText: string | undefined;
+  if (video.text) {
+    try {
+      koreanText = await translateToKorean(video.text);
+      englishText = video.text;
+    } catch (err) {
+      console.error("translateToKorean failed:", err);
+    }
   }
 
   await saveRecord({
-    id: transcript.videoId,
-    videoId: transcript.videoId,
+    id: video.videoId,
+    videoId: video.videoId,
     youtubeUrl: url,
-    title: transcript.title,
-    englishText: transcript.text,
+    title: video.title,
+    englishText,
     koreanText,
+    memo: "",
     createdAt: new Date().toISOString(),
   });
 
-  redirect(`/videos/${transcript.videoId}`);
+  redirect(`/videos/${video.videoId}`);
+}
+
+export async function updateReferenceMemo(videoId: string, memo: string): Promise<void> {
+  await updateMemo(videoId, memo);
+  revalidatePath("/");
+}
+
+export async function deleteReference(videoId: string): Promise<void> {
+  await deleteRecord(videoId);
+  await deleteMedia("audio", videoId);
+  await deleteMedia("video", videoId);
+  revalidatePath("/");
 }

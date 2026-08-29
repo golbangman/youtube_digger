@@ -9,8 +9,9 @@ type SeedRecord = {
   videoId: string;
   title: string;
   youtubeUrl?: string;
-  englishText?: string;
-  koreanText?: string;
+  memo?: string;
+  /** false면 자막 없는 레코드로 심는다. 기본값 true. */
+  caption?: boolean;
 };
 
 // records.json은 dev 서버 한 대가 공유한다. 병렬 스펙이 read-modify-write로
@@ -45,14 +46,17 @@ async function readRecords(): Promise<Array<Record<string, unknown> & { videoId:
 export async function seedRecord(record: SeedRecord): Promise<void> {
   await withLock(async () => {
     const rows = (await readRecords()).filter((r) => r.videoId !== record.videoId);
+    const withCaption = record.caption ?? true;
     rows.push({
       id: record.videoId,
       videoId: record.videoId,
       youtubeUrl:
         record.youtubeUrl ?? `https://www.youtube.com/watch?v=${record.videoId}`,
       title: record.title,
-      englishText: record.englishText ?? "Seeded transcript.",
-      koreanText: record.koreanText ?? "심어 둔 번역.",
+      ...(withCaption
+        ? { englishText: "Seeded transcript.", koreanText: "심어 둔 번역." }
+        : {}),
+      memo: record.memo ?? "",
       createdAt: new Date().toISOString(),
     });
     await fs.mkdir(DATA_DIR, { recursive: true });
