@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { FontMatch } from "@/components/font-match";
+import { FontMatchPanel, FontMatchProvider, FontMatchTrigger } from "@/components/font-match";
 import { MediaDownload } from "@/components/media-download";
 import { PlayerProvider, YouTubePlayer } from "@/components/player";
 import { mediaExists } from "@/lib/media-store";
@@ -47,14 +47,15 @@ export default async function VideoPage(props: PageProps<"/videos/[id]">) {
         </div>
 
         <PlayerProvider>
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-            <div className="lg:w-4/5">
-              <YouTubePlayer videoId={record.videoId} />
+          <FontMatchProvider videoId={record.videoId}>
+            <div className="flex flex-col gap-6">
+              <div className="relative">
+                <YouTubePlayer videoId={record.videoId} />
+                <FontMatchTrigger className="absolute top-3 right-3 z-20" />
+              </div>
+              <FontMatchPanel />
             </div>
-            <div className="min-w-0 lg:w-1/5">
-              <FontMatch videoId={record.videoId} />
-            </div>
-          </div>
+          </FontMatchProvider>
 
           {captionReady ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
