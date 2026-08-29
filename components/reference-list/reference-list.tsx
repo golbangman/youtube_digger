@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { deleteReference, updateReferenceMemo } from "@/app/actions";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 export type ReferenceItem = {
   videoId: string;
@@ -50,7 +50,7 @@ function ReferenceRow({ item }: { item: ReferenceItem }) {
   return (
     <li className="flex gap-4 py-4">
       <Link
-        href={`/videos/${item.videoId}`}
+        href={`/videos/${item.videoId}/translate`}
         className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-800"
       >
         {/* 유튜브 공개 썸네일. 사용자가 올린 이미지가 아니라 외부 URL이라 일반 img를 쓴다. */}
@@ -66,7 +66,7 @@ function ReferenceRow({ item }: { item: ReferenceItem }) {
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-3">
           <Link
-            href={`/videos/${item.videoId}`}
+            href={`/videos/${item.videoId}/translate`}
             className="line-clamp-2 text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-100"
           >
             {item.title}
@@ -81,6 +81,21 @@ function ReferenceRow({ item }: { item: ReferenceItem }) {
           rows={2}
           className="w-full resize-y rounded-md border border-input bg-background px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
+
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/videos/${item.videoId}/translate`}
+            className={buttonVariants({ variant: "outline", size: "xs" })}
+          >
+            번역
+          </Link>
+          <Link
+            href={`/videos/${item.videoId}/media`}
+            className={buttonVariants({ variant: "outline", size: "xs" })}
+          >
+            MEDIA 추출
+          </Link>
+        </div>
 
         <div className="flex items-center gap-2">
           {confirming ? (

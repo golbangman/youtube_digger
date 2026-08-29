@@ -36,7 +36,7 @@ export async function processVideoUrl(
 
   const existing = await getRecordByVideoId(video.videoId);
   if (existing) {
-    redirect(`/videos/${video.videoId}`);
+    redirect(`/videos/${video.videoId}/translate`);
   }
 
   // 영어 자막이 있으면 번역까지 시도한다. 번역이 실패해도 등록은 한다(자막 없음 상태).
@@ -62,7 +62,7 @@ export async function processVideoUrl(
     createdAt: new Date().toISOString(),
   });
 
-  redirect(`/videos/${video.videoId}`);
+  redirect(`/videos/${video.videoId}/translate`);
 }
 
 export async function updateReferenceMemo(videoId: string, memo: string): Promise<void> {
