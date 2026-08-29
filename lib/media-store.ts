@@ -20,6 +20,10 @@ export function mediaPath(kind: MediaKind, videoId: string): string {
   return path.join(mediaDir(kind), `${safeId(videoId)}.${EXTENSION[kind]}`);
 }
 
+export function mediaExtension(kind: MediaKind): string {
+  return EXTENSION[kind];
+}
+
 export async function mediaExists(kind: MediaKind, videoId: string): Promise<boolean> {
   try {
     const stat = await fs.stat(mediaPath(kind, videoId));
@@ -27,4 +31,8 @@ export async function mediaExists(kind: MediaKind, videoId: string): Promise<boo
   } catch {
     return false;
   }
+}
+
+export async function deleteMedia(kind: MediaKind, videoId: string): Promise<void> {
+  await fs.rm(mediaPath(kind, videoId), { force: true });
 }

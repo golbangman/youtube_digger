@@ -1,7 +1,4 @@
-import { promises as fs } from "node:fs";
-
-import { attachmentDisposition } from "@/lib/content-disposition";
-import { mediaPath } from "@/lib/media-store";
+import { serveMedia } from "@/lib/media-serve";
 import { getRecordByVideoId } from "@/lib/store";
 
 export async function GET(_req: Request, ctx: RouteContext<"/videos/[id]/audio">) {
@@ -12,19 +9,5 @@ export async function GET(_req: Request, ctx: RouteContext<"/videos/[id]/audio">
     return new Response("자막 레코드를 찾을 수 없습니다.", { status: 404 });
   }
 
-  let file: Buffer;
-  try {
-    file = await fs.readFile(mediaPath("audio", record.videoId));
-  } catch {
-    return new Response("아직 추출된 배경음악이 없습니다.", { status: 404 });
-  }
-
-  return new Response(new Uint8Array(file), {
-    status: 200,
-    headers: {
-      "Content-Type": "audio/mpeg",
-      "Content-Length": String(file.byteLength),
-      "Content-Disposition": attachmentDisposition(`${record.title}.mp3`, "audio.mp3"),
-    },
-  });
+  return serveMedia("audio", record.videoId, record.title);
 }
