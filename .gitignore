@@ -24,6 +24,9 @@
 # production
 /build
 
+# local reference records
+/data
+
 # misc
 .DS_Store
 *.pem
