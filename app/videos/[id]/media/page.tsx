@@ -23,22 +23,12 @@ export default async function MediaPage(props: PageProps<"/videos/[id]/media">) 
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
-        <div className="flex flex-col gap-1">
-          <Link
-            href="/"
-            className="text-sm text-zinc-500 hover:underline dark:text-zinc-400"
-          >
-            ← 새 영상 입력
-          </Link>
-          <a
-            href={record.youtubeUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm break-all text-zinc-500 hover:underline dark:text-zinc-400"
-          >
-            {record.youtubeUrl}
-          </a>
-        </div>
+        <Link
+          href="/"
+          className="text-sm text-zinc-500 hover:underline dark:text-zinc-400"
+        >
+          ← 새 영상 입력
+        </Link>
 
         <h1 className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">
           {record.title}
@@ -47,9 +37,19 @@ export default async function MediaPage(props: PageProps<"/videos/[id]/media">) 
         <PlayerProvider>
           <FontMatchProvider videoId={record.videoId}>
             <div className="flex flex-col gap-6">
-              <div className="relative">
-                <YouTubePlayer videoId={record.videoId} />
-                <FontMatchTrigger className="absolute top-3 right-3 z-20" />
+              <div className="flex w-3/4 flex-col gap-1 self-center">
+                <div className="relative">
+                  <YouTubePlayer videoId={record.videoId} />
+                  <FontMatchTrigger className="absolute top-3 right-3 z-20" />
+                </div>
+                <a
+                  href={record.youtubeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="self-end text-right text-sm break-all text-zinc-500 hover:underline dark:text-zinc-400"
+                >
+                  {record.youtubeUrl}
+                </a>
               </div>
               <FontMatchPanel />
             </div>
