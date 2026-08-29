@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { deleteReference, updateReferenceMemo } from "@/app/actions";
+import { deleteReference } from "@/app/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 
 export type ReferenceItem = {
@@ -32,14 +32,6 @@ function ReferenceRow({ item }: { item: ReferenceItem }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
-
-  const saveMemo = (memo: string) => {
-    if (memo === item.memo) return;
-    startTransition(async () => {
-      await updateReferenceMemo(item.videoId, memo);
-      router.refresh();
-    });
-  };
 
   const remove = () => {
     startTransition(async () => {
@@ -84,65 +76,59 @@ function ReferenceRow({ item }: { item: ReferenceItem }) {
           {item.youtubeUrl}
         </a>
 
-        <textarea
-          defaultValue={item.memo}
-          onBlur={(event) => saveMemo(event.target.value)}
-          placeholder="메모"
-          rows={2}
-          className="w-full resize-y rounded-md border border-input bg-background px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/videos/${item.videoId}/translate`}
+              className={buttonVariants({ variant: "outline", size: "xs" })}
+            >
+              번역
+            </Link>
+            <Link
+              href={`/videos/${item.videoId}/media`}
+              className={buttonVariants({ variant: "outline", size: "xs" })}
+            >
+              MEDIA 추출
+            </Link>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/videos/${item.videoId}/translate`}
-            className={buttonVariants({ variant: "outline", size: "xs" })}
-          >
-            번역
-          </Link>
-          <Link
-            href={`/videos/${item.videoId}/media`}
-            className={buttonVariants({ variant: "outline", size: "xs" })}
-          >
-            MEDIA 추출
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {confirming ? (
-            <>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                레코드와 받아둔 파일을 지웁니다.
-              </span>
-              <Button
-                type="button"
-                size="xs"
-                variant="destructive"
-                disabled={pending}
-                onClick={remove}
-              >
-                지우기
-              </Button>
+          <div className="flex items-center gap-2">
+            {confirming ? (
+              <>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  레코드와 받아둔 파일을 지웁니다.
+                </span>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="destructive"
+                  disabled={pending}
+                  onClick={remove}
+                >
+                  지우기
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="ghost"
+                  disabled={pending}
+                  onClick={() => setConfirming(false)}
+                >
+                  취소
+                </Button>
+              </>
+            ) : (
               <Button
                 type="button"
                 size="xs"
                 variant="ghost"
                 disabled={pending}
-                onClick={() => setConfirming(false)}
+                onClick={() => setConfirming(true)}
               >
-                취소
+                삭제
               </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              size="xs"
-              variant="ghost"
-              disabled={pending}
-              onClick={() => setConfirming(true)}
-            >
-              삭제
-            </Button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </li>
